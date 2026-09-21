@@ -68,7 +68,7 @@ def create_app(
 
     @app.get("/api/v1/calculations")
     @app.get("/api/calculations")
-    def calculations(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
+    def calculations(_auth: ReadAuth) -> list[dict[str, Any]]:
         return [
             calculation_descriptor(definition["id"])
             for definition in runtime.list_calculations()
@@ -78,7 +78,7 @@ def create_app(
     @app.get("/api/calculations/{calculation_id}")
     def calculation(
         calculation_id: str,
-        _auth: AuthContext = Depends(require_read),
+        _auth: ReadAuth,
     ) -> dict[str, Any]:
         try:
             return calculation_descriptor(calculation_id)
@@ -99,11 +99,10 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-
     @app.post("/api/v1/workflows/wind/site")
     async def wind_site_workflow(
         inputs: dict[str, Any],
-        _auth: AuthContext = Depends(require_run),
+        _auth: RunAuth,
     ) -> dict[str, Any]:
         """Run the full OpenWind site workflow through the installed module."""
 
