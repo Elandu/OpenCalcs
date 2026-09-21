@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use OpenCalcs, please cite it using this metadata."
+title: "OpenCalcs"
+version: "0.1.0"
+authors:
+  - name: "Elandu"
+repository-code: "https://github.com/Elandu/OpenCalcs"
+license: "AGPL-3.0-only"
+keywords:
+  - engineering calculations
+  - calculation registry
+  - engineering software
+  - MCP
+  - Australia
+abstract: >-
+  OpenCalcs is a modular engineering calculation runtime and integration layer
+  for versioned calculation plugins, REST APIs, MCP tooling, provenance and
+  linked engineering workflows.
