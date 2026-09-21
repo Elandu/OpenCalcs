@@ -12,7 +12,11 @@ dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
   "pydantic>=2.11,<3",
+  "mcp>=1.26,<2",
 ]
+
+[project.scripts]
+opencalcs-mcp = "opencalcs.mcp_server:main"
 
 [project.optional-dependencies]
 dev = [
