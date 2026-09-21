@@ -30,15 +30,18 @@ async def run_openwind_site_workflow(inputs: dict[str, Any]) -> dict[str, Any]:
     stages: dict[str, Any] = {}
     events: list[dict[str, Any]] = []
 
-    async with httpx.AsyncClient(
-        transport=transport,
-        base_url="http://openwind.internal",
-        timeout=120.0,
-    ) as client, client.stream(
-        "POST",
-        "/api/wind-workflow/stream",
-        json=inputs,
-    ) as response:
+    async with (
+        httpx.AsyncClient(
+            transport=transport,
+            base_url="http://openwind.internal",
+            timeout=120.0,
+        ) as client,
+        client.stream(
+            "POST",
+            "/api/wind-workflow/stream",
+            json=inputs,
+        ) as response,
+    ):
         if response.status_code >= 400:
             detail = await response.aread()
             raise ValueError(
