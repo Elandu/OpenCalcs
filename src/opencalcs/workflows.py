@@ -34,34 +34,33 @@ async def run_openwind_site_workflow(inputs: dict[str, Any]) -> dict[str, Any]:
         transport=transport,
         base_url="http://openwind.internal",
         timeout=120.0,
-    ) as client:
-        async with client.stream(
-            "POST",
-            "/api/wind-workflow/stream",
-            json=inputs,
-        ) as response:
-            if response.status_code >= 400:
-                detail = await response.aread()
-                raise ValueError(
-                    f"OpenWind workflow failed ({response.status_code}): "
-                    f"{detail.decode(errors='replace')[:500]}"
-                )
+    ) as client, client.stream(
+        "POST",
+        "/api/wind-workflow/stream",
+        json=inputs,
+    ) as response:
+        if response.status_code >= 400:
+            detail = await response.aread()
+            raise ValueError(
+                f"OpenWind workflow failed ({response.status_code}): "
+                f"{detail.decode(errors='replace')[:500]}"
+            )
 
-            async for line in response.aiter_lines():
-                if not line.strip():
-                    continue
-                event = json.loads(line)
-                events.append(event)
-                stage = str(event.get("stage", "unknown"))
-                data = event.get("data")
-                if data is not None:
-                    stages[stage] = data
-                if stage == "error":
-                    status_code = int((data or {}).get("status_code", 500))
-                    message = str(event.get("label", "OpenWind workflow failed."))
-                    if status_code in {400, 422}:
-                        raise ValueError(message)
-                    raise RuntimeError(message)
+        async for line in response.aiter_lines():
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            events.append(event)
+            stage = str(event.get("stage", "unknown"))
+            data = event.get("data")
+            if data is not None:
+                stages[stage] = data
+            if stage == "error":
+                status_code = int((data or {}).get("status_code", 500))
+                message = str(event.get("label", "OpenWind workflow failed."))
+                if status_code in {400, 422}:
+                    raise ValueError(message)
+                raise RuntimeError(message)
 
     workflow_stage = stages.get("workflow", {})
     workflow = workflow_stage.get("workflow") if isinstance(workflow_stage, dict) else None
