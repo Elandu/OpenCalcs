@@ -22,6 +22,7 @@ from opencalcs.auth import (
     MCP_CONNECT,
     OpenCalcsAuthenticator,
 )
+from opencalcs.provenance import plugin_provenance, runtime_provenance
 from opencalcs.registry import CalculationRegistry
 from opencalcs.workflows import run_openwind_site_workflow
 
@@ -90,17 +91,7 @@ def _require_scope(scope: str) -> None:
 
 
 def _descriptor(calculation_id: str) -> dict[str, Any]:
-    definition = runtime.get(calculation_id)
-    descriptor = definition.descriptor()
-    for plugin in runtime.plugins:
-        if any(item.id == calculation_id for item in plugin.calculations):
-            descriptor["plugin"] = {
-                "id": plugin.id,
-                "name": plugin.name,
-                "version": plugin.version,
-            }
-            break
-    return descriptor
+    return runtime.describe(calculation_id)
 
 
 @mcp.tool()
@@ -108,7 +99,14 @@ def list_plugins() -> list[dict[str, Any]]:
     """List installed engineering calculation plugins and their versions."""
 
     _require_scope(CALCULATIONS_READ)
-    return [plugin.descriptor() for plugin in runtime.plugins]
+    return [
+        {
+            **plugin.descriptor(),
+            "provenance": plugin_provenance(plugin),
+            "runtime": runtime_provenance(),
+        }
+        for plugin in runtime.plugins
+    ]
 
 
 @mcp.tool()
@@ -119,7 +117,7 @@ def list_calculations(
     """List calculations available through OpenCalcs, optionally filtered."""
 
     _require_scope(CALCULATIONS_READ)
-    calculations = [_descriptor(item["id"]) for item in runtime.list_calculations()]
+    calculations = runtime.list_calculations()
     if plugin_id is not None:
         calculations = [
             item for item in calculations if item.get("plugin", {}).get("id") == plugin_id
@@ -155,6 +153,7 @@ def run_calculation(
         "calculation": definition,
         "inputs": inputs,
         "result": result,
+        "provenance": result.get("_provenance"),
     }
 
 
