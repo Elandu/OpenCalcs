@@ -15,6 +15,7 @@ from opencalcs.auth import (
     Authenticator,
     OpenCalcsAuthenticator,
 )
+from opencalcs.provenance import plugin_provenance, runtime_provenance
 from opencalcs.registry import CalculationRegistry
 from opencalcs.workflows import run_openwind_site_workflow
 
@@ -42,17 +43,7 @@ def create_app(
         return await auth.authenticate_request(request, (CALCULATIONS_RUN,))
 
     def calculation_descriptor(calculation_id: str) -> dict[str, Any]:
-        definition = runtime.get(calculation_id)
-        descriptor = definition.descriptor()
-        for plugin in runtime.plugins:
-            if any(item.id == calculation_id for item in plugin.calculations):
-                descriptor["plugin"] = {
-                    "id": plugin.id,
-                    "name": plugin.name,
-                    "version": plugin.version,
-                }
-                break
-        return descriptor
+        return runtime.describe(calculation_id)
 
     @app.get("/health/live")
     def health_live() -> dict[str, str]:
@@ -61,14 +52,19 @@ def create_app(
     @app.get("/api/v1/plugins")
     @app.get("/api/plugins")
     def plugins(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
-        return [plugin.descriptor() for plugin in runtime.plugins]
+        return [
+            {
+                **plugin.descriptor(),
+                "provenance": plugin_provenance(plugin),
+                "runtime": runtime_provenance(),
+            }
+            for plugin in runtime.plugins
+        ]
 
     @app.get("/api/v1/calculations")
     @app.get("/api/calculations")
     def calculations(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
-        return [
-            calculation_descriptor(definition["id"]) for definition in runtime.list_calculations()
-        ]
+        return runtime.list_calculations()
 
     @app.get("/api/v1/calculations/{calculation_id}")
     @app.get("/api/calculations/{calculation_id}")
