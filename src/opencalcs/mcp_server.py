@@ -132,9 +132,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if item.strip()
         ]
         if args.host in {"0.0.0.0", "::"} and not allowed_hosts:
-            parser.error(
-                "OPENCALCS_MCP_ALLOWED_HOSTS is required for wildcard HTTP binds."
-            )
+            parser.error("OPENCALCS_MCP_ALLOWED_HOSTS is required for wildcard HTTP binds.")
         if args.host not in {"0.0.0.0", "::"} and args.host not in allowed_hosts:
             allowed_hosts.append(args.host)
         mcp.settings.transport_security = TransportSecuritySettings(
