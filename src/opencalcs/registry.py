@@ -77,6 +77,6 @@ class CalculationRegistry:
             result,
             plugin=self.get_plugin(calculation_id),
             calculation_id=definition.id,
-            calculation_version=definition.version,
+            calculation_version=str(getattr(definition, "version", "unknown")),
             standard=standard,
         )
