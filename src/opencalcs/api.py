@@ -65,7 +65,7 @@ def create_app(
 
     @app.get("/api/v1/calculations")
     @app.get("/api/calculations")
-    def calculations(_auth: ReadAuth) -> list[dict[str, Any]]:
+    def calculations(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
         return [
             calculation_descriptor(definition["id"])
             for definition in runtime.list_calculations()
@@ -75,7 +75,7 @@ def create_app(
     @app.get("/api/calculations/{calculation_id}")
     def calculation(
         calculation_id: str,
-        _auth: ReadAuth,
+        _auth: AuthContext = Depends(require_read),
     ) -> dict[str, Any]:
         try:
             return calculation_descriptor(calculation_id)
@@ -99,7 +99,7 @@ def create_app(
     @app.post("/api/v1/workflows/wind/site")
     async def wind_site_workflow(
         inputs: dict[str, Any],
-        _auth: RunAuth,
+        _auth: AuthContext = Depends(require_run),
     ) -> dict[str, Any]:
         """Run the full OpenWind site workflow through the installed module."""
 
