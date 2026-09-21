@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 Elandu and contributors
+
 """Authentication helpers shared by the OpenCalcs REST API and MCP server."""
 
 from __future__ import annotations
