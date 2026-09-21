@@ -67,8 +67,7 @@ def create_app(
     @app.get("/api/calculations")
     def calculations(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
         return [
-            calculation_descriptor(definition["id"])
-            for definition in runtime.list_calculations()
+            calculation_descriptor(definition["id"]) for definition in runtime.list_calculations()
         ]
 
     @app.get("/api/v1/calculations/{calculation_id}")
