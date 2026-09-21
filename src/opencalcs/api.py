@@ -52,6 +52,13 @@ def create_app(
     def health_live() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/api/v1/about")
+    def about() -> dict[str, Any]:
+        return {
+            "runtime": runtime_provenance(),
+            "plugins": [plugin_provenance(plugin) for plugin in runtime.plugins],
+        }
+
     @app.get("/api/v1/plugins")
     @app.get("/api/plugins")
     def plugins(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
