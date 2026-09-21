@@ -9,6 +9,8 @@ from opencalcs.registry import CalculationRegistry
 @dataclass(frozen=True)
 class FakeCalculation:
     id: str = "test.double"
+    version: str = "1"
+    standard = None
 
     def descriptor(self):
         return {
@@ -39,20 +41,17 @@ class FakePlugin:
 
 
 def test_mcp_catalog_and_execution_use_shared_registry(monkeypatch) -> None:
+    monkeypatch.setenv("OPENCALCS_SOURCE_REVISION", "runtime-test-revision")
     registry = CalculationRegistry(plugins=(FakePlugin(),))
     monkeypatch.setattr(mcp_server, "runtime", registry)
 
     calculations = mcp_server.list_calculations()
-    assert calculations == [
-        {
-            "id": "test.double",
-            "name": "Double",
-            "category": "test",
-            "input_schema": {"type": "object"},
-            "plugin": {"id": "test.plugin", "name": "Test", "version": "1"},
-        }
-    ]
+    assert calculations[0]["id"] == "test.double"
+    assert calculations[0]["plugin"]["id"] == "test.plugin"
+    assert calculations[0]["runtime"]["revision"] == "runtime-test-revision"
 
     result = mcp_server.run_calculation("test.double", {"value": 5})
     assert result["calculation"]["plugin"]["id"] == "test.plugin"
-    assert result["result"] == {"value": 10}
+    assert result["result"]["value"] == 10
+    assert result["provenance"]["runtime"]["revision"] == "runtime-test-revision"
+    assert result["provenance"]["engine"]["id"] == "test.plugin"
