@@ -34,7 +34,22 @@ def test_api_lists_and_runs_calculation() -> None:
     app = create_app(CalculationRegistry(plugins=(FakePlugin(),)))
     client = TestClient(app)
 
-    assert client.get("/api/calculations").json() == [{"id": "test.double", "name": "Double"}]
+    expected = [
+        {
+            "id": "test.double",
+            "name": "Double",
+            "plugin": {"id": "test.plugin", "name": "Test", "version": "1"},
+        }
+    ]
+    assert client.get("/api/calculations").json() == expected
+    assert client.get("/api/v1/calculations").json() == expected
+
     response = client.post("/api/calculations/test.double/run", json={"inputs": {"value": 4}})
+    versioned_response = client.post(
+        "/api/v1/calculations/test.double/run",
+        json={"inputs": {"value": 4}},
+    )
     assert response.status_code == 200
+    assert versioned_response.status_code == 200
     assert response.json() == {"value": 8}
+    assert versioned_response.json() == {"value": 8}
