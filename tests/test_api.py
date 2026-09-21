@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from fastapi.testclient import TestClient
 
 from opencalcs.api import create_app
+from opencalcs.auth import AllowAllAuthenticator
 from opencalcs.registry import CalculationRegistry
 
 
@@ -31,7 +32,10 @@ class FakePlugin:
 
 
 def test_api_lists_and_runs_calculation() -> None:
-    app = create_app(CalculationRegistry(plugins=(FakePlugin(),)))
+    app = create_app(
+        CalculationRegistry(plugins=(FakePlugin(),)),
+        authenticator=AllowAllAuthenticator(),
+    )
     client = TestClient(app)
 
     expected = [
