@@ -1,0 +1,2 @@
+-e .
+git+https://github.com/Elandu/OpenWind-AU.git@ced6bd4f5d89b4d1f55535b5ae46fd0cd4c3fa1f#egg=openwind-au
