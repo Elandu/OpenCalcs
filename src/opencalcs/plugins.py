@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 Elandu and contributors
+
 """Discovery of installed engineering calculation plugins."""
 
 from __future__ import annotations
