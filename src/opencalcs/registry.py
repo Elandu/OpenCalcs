@@ -33,10 +33,7 @@ class CalculationRegistry:
     def list_calculations(self) -> list[dict[str, Any]]:
         """Return calculation descriptors in stable identifier order."""
 
-        return [
-            self.describe(calculation_id)
-            for calculation_id in sorted(self._calculations)
-        ]
+        return [self.describe(calculation_id) for calculation_id in sorted(self._calculations)]
 
     def get(self, calculation_id: str) -> Any:
         """Return one calculation by stable identifier."""
