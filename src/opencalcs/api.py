@@ -23,6 +23,19 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
     runtime = registry or CalculationRegistry()
     app = FastAPI(title="OpenCalcs", version=__version__)
 
+    def calculation_descriptor(calculation_id: str) -> dict[str, Any]:
+        definition = runtime.get(calculation_id)
+        descriptor = definition.descriptor()
+        for plugin in runtime.plugins:
+            if any(item.id == calculation_id for item in plugin.calculations):
+                descriptor["plugin"] = {
+                    "id": plugin.id,
+                    "name": plugin.name,
+                    "version": plugin.version,
+                }
+                break
+        return descriptor
+
     @app.get("/health/live")
     def health_live() -> dict[str, str]:
         return {"status": "ok"}
@@ -33,12 +46,15 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
 
     @app.get("/api/calculations")
     def calculations() -> list[dict[str, Any]]:
-        return runtime.list_calculations()
+        return [
+            calculation_descriptor(definition["id"])
+            for definition in runtime.list_calculations()
+        ]
 
     @app.get("/api/calculations/{calculation_id}")
     def calculation(calculation_id: str) -> dict[str, Any]:
         try:
-            return runtime.get(calculation_id).descriptor()
+            return calculation_descriptor(calculation_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
