@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 Elandu and contributors
+
 """Model Context Protocol server for the OpenCalcs calculation registry."""
 
 from __future__ import annotations
