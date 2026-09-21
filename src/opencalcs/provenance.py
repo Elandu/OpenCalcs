@@ -28,6 +28,11 @@ def distribution_revision(
         if configured:
             return configured
 
+    if distribution_name == "opencalcs":
+        render_revision = os.environ.get("RENDER_GIT_COMMIT", "").strip()
+        if render_revision:
+            return render_revision
+
     try:
         installed = distribution(distribution_name)
     except PackageNotFoundError:
