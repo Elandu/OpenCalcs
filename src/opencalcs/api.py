@@ -49,8 +49,7 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
     @app.get("/api/calculations")
     def calculations() -> list[dict[str, Any]]:
         return [
-            calculation_descriptor(definition["id"])
-            for definition in runtime.list_calculations()
+            calculation_descriptor(definition["id"]) for definition in runtime.list_calculations()
         ]
 
     @app.get("/api/v1/calculations/{calculation_id}")
