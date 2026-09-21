@@ -40,10 +40,12 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
     def health_live() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/api/v1/plugins")
     @app.get("/api/plugins")
     def plugins() -> list[dict[str, Any]]:
         return [plugin.descriptor() for plugin in runtime.plugins]
 
+    @app.get("/api/v1/calculations")
     @app.get("/api/calculations")
     def calculations() -> list[dict[str, Any]]:
         return [
@@ -51,6 +53,7 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
             for definition in runtime.list_calculations()
         ]
 
+    @app.get("/api/v1/calculations/{calculation_id}")
     @app.get("/api/calculations/{calculation_id}")
     def calculation(calculation_id: str) -> dict[str, Any]:
         try:
@@ -58,6 +61,7 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    @app.post("/api/v1/calculations/{calculation_id}/run")
     @app.post("/api/calculations/{calculation_id}/run")
     def run_calculation(
         calculation_id: str,
