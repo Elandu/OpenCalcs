@@ -4,11 +4,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
 
 from opencalcs import __version__
+from opencalcs.auth import (
+    CALCULATIONS_READ,
+    CALCULATIONS_RUN,
+    AuthContext,
+    Authenticator,
+    OpenCalcsAuthenticator,
+)
 from opencalcs.registry import CalculationRegistry
+from opencalcs.workflows import run_openwind_site_workflow
 
 
 class CalculationRunRequest(BaseModel):
@@ -17,11 +25,21 @@ class CalculationRunRequest(BaseModel):
     inputs: dict[str, Any]
 
 
-def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
-    """Create the OpenCalcs API with an optional explicit registry for testing."""
+def create_app(
+    registry: CalculationRegistry | None = None,
+    authenticator: Authenticator | None = None,
+) -> FastAPI:
+    """Create the OpenCalcs API with explicit shared authentication."""
 
     runtime = registry or CalculationRegistry()
+    auth = authenticator or OpenCalcsAuthenticator()
     app = FastAPI(title="OpenCalcs", version=__version__)
+
+    async def require_read(request: Request) -> AuthContext:
+        return await auth.authenticate_request(request, (CALCULATIONS_READ,))
+
+    async def require_run(request: Request) -> AuthContext:
+        return await auth.authenticate_request(request, (CALCULATIONS_RUN,))
 
     def calculation_descriptor(calculation_id: str) -> dict[str, Any]:
         definition = runtime.get(calculation_id)
@@ -42,19 +60,22 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
 
     @app.get("/api/v1/plugins")
     @app.get("/api/plugins")
-    def plugins() -> list[dict[str, Any]]:
+    def plugins(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
         return [plugin.descriptor() for plugin in runtime.plugins]
 
     @app.get("/api/v1/calculations")
     @app.get("/api/calculations")
-    def calculations() -> list[dict[str, Any]]:
+    def calculations(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
         return [
             calculation_descriptor(definition["id"]) for definition in runtime.list_calculations()
         ]
 
     @app.get("/api/v1/calculations/{calculation_id}")
     @app.get("/api/calculations/{calculation_id}")
-    def calculation(calculation_id: str) -> dict[str, Any]:
+    def calculation(
+        calculation_id: str,
+        _auth: AuthContext = Depends(require_read),
+    ) -> dict[str, Any]:
         try:
             return calculation_descriptor(calculation_id)
         except KeyError as exc:
@@ -65,6 +86,7 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
     def run_calculation(
         calculation_id: str,
         request: CalculationRunRequest,
+        _auth: AuthContext = Depends(require_run),
     ) -> dict[str, Any]:
         try:
             return runtime.run(calculation_id, request.inputs)
@@ -72,6 +94,21 @@ def create_app(registry: CalculationRegistry | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+    @app.post("/api/v1/workflows/wind/site")
+    async def wind_site_workflow(
+        inputs: dict[str, Any],
+        _auth: AuthContext = Depends(require_run),
+    ) -> dict[str, Any]:
+        """Run the full OpenWind site workflow through the installed module."""
+
+        try:
+            return await run_openwind_site_workflow(inputs)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return app
 
