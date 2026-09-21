@@ -38,3 +38,58 @@ GET  /api/calculations
 GET  /api/calculations/{calculation_id}
 POST /api/calculations/{calculation_id}/run
 ```
+
+
+## API and MCP surfaces
+
+OpenCalcs is the primary public integration layer. Calculation modules remain independently
+versioned and may retain their own specialist APIs/MCP servers for compatibility and
+domain-specific workflows.
+
+### REST API
+
+New integrations should use the versioned endpoints:
+
+```text
+GET  /api/v1/plugins
+GET  /api/v1/calculations
+GET  /api/v1/calculations/{calculation_id}
+POST /api/v1/calculations/{calculation_id}/run
+```
+
+The original unversioned `/api/...` routes are retained as compatibility aliases.
+
+### OpenCalcs MCP
+
+The top-level MCP server uses the same installed plugin registry as the REST API and exposes:
+
+```text
+list_plugins
+list_calculations
+describe_calculation
+run_calculation
+```
+
+A calculation is addressed by its stable identifier, for example
+`au.wind.regional_wind_speed`. The response includes the owning plugin and its exact version,
+so callers do not need to know where the calculation is implemented.
+
+The intended hierarchy is:
+
+```text
+OpenCalcs REST / MCP
+       |
+       +-- OpenWind-AU
+       |     +-- calculation definitions
+       |     +-- specialist wind evidence/workflow tools
+       |     +-- legacy/direct OpenWind MCP retained
+       |
+       +-- future OpenLoads-AU
+       +-- future OpenSteel-AU
+       +-- future OpenConcrete-AU
+```
+
+The parent MCP owns discovery and generic execution. Domain modules may additionally expose
+specialist MCP tools that do not fit the common calculation contract. Those module-specific
+surfaces should remain namespaced and share the same underlying calculation code rather than
+reimplementing formulae.
