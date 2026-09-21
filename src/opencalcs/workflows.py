@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from opencalcs.provenance import plugin_provenance, runtime_provenance
+
 
 @lru_cache(maxsize=1)
 def _openwind_app():
@@ -22,9 +24,11 @@ async def run_openwind_site_workflow(inputs: dict[str, Any]) -> dict[str, Any]:
     """Run the existing OpenWind streamed workflow once and aggregate its stages."""
 
     try:
-        from openwind_au import __version__ as openwind_version
+        from openwind_au.plugin import get_plugin
     except ImportError as exc:
         raise RuntimeError("OpenWind-AU is not installed in this OpenCalcs runtime.") from exc
+
+    openwind_plugin = get_plugin()
 
     transport = httpx.ASGITransport(app=_openwind_app())
     stages: dict[str, Any] = {}
@@ -72,11 +76,8 @@ async def run_openwind_site_workflow(inputs: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "workflow_id": "au.wind.site_assessment",
-        "plugin": {
-            "id": "au.openwind",
-            "name": "OpenWind-AU",
-            "version": openwind_version,
-        },
+        "runtime": runtime_provenance(),
+        "plugin": plugin_provenance(openwind_plugin),
         "standard": {
             "name": "AS/NZS 1170.2",
             "edition": "2021",
