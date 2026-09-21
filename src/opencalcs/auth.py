@@ -48,9 +48,7 @@ class OpenCalcsAuthenticator:
         timeout_seconds: float = 8.0,
     ) -> None:
         self.supabase_url = (
-            supabase_url
-            or os.environ.get("OPENCALCS_SUPABASE_URL")
-            or DEFAULT_SUPABASE_URL
+            supabase_url or os.environ.get("OPENCALCS_SUPABASE_URL") or DEFAULT_SUPABASE_URL
         ).rstrip("/")
         self.publishable_key = (
             publishable_key
