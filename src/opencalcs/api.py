@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
@@ -41,9 +41,6 @@ def create_app(
     async def require_run(request: Request) -> AuthContext:
         return await auth.authenticate_request(request, (CALCULATIONS_RUN,))
 
-    ReadAuth = Annotated[AuthContext, Depends(require_read)]
-    RunAuth = Annotated[AuthContext, Depends(require_run)]
-
     def calculation_descriptor(calculation_id: str) -> dict[str, Any]:
         definition = runtime.get(calculation_id)
         descriptor = definition.descriptor()
@@ -63,7 +60,7 @@ def create_app(
 
     @app.get("/api/v1/plugins")
     @app.get("/api/plugins")
-    def plugins(_auth: ReadAuth) -> list[dict[str, Any]]:
+    def plugins(_auth: AuthContext = Depends(require_read)) -> list[dict[str, Any]]:
         return [plugin.descriptor() for plugin in runtime.plugins]
 
     @app.get("/api/v1/calculations")
@@ -90,7 +87,7 @@ def create_app(
     def run_calculation(
         calculation_id: str,
         request: CalculationRunRequest,
-        _auth: RunAuth,
+        _auth: AuthContext = Depends(require_run),
     ) -> dict[str, Any]:
         try:
             return runtime.run(calculation_id, request.inputs)
