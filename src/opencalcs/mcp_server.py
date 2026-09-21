@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
