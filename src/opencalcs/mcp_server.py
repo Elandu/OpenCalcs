@@ -79,8 +79,6 @@ mcp = FastMCP(
 mcp._mcp_server.version = __version__
 
 
-
-
 def _require_scope(scope: str) -> None:
     """Require a scope for HTTP MCP calls; stdio remains a trusted local transport."""
 
@@ -158,7 +156,6 @@ def run_calculation(
         "inputs": inputs,
         "result": result,
     }
-
 
 
 @mcp.tool()
