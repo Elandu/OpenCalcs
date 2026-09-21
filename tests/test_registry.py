@@ -10,6 +10,8 @@ from opencalcs.registry import CalculationRegistry
 @dataclass(frozen=True)
 class FakeCalculation:
     id: str
+    version: str = "1"
+    standard = None
 
     def descriptor(self):
         return {"id": self.id}
@@ -29,13 +31,32 @@ class FakePlugin:
         return {"id": self.id, "name": self.name, "version": self.version}
 
 
-def test_registry_lists_and_runs_calculations() -> None:
+def test_registry_lists_and_runs_calculations(monkeypatch) -> None:
+    monkeypatch.setenv("OPENCALCS_SOURCE_REVISION", "runtime-test-revision")
     registry = CalculationRegistry(
         plugins=(FakePlugin("test.plugin", "Test", "1", (FakeCalculation("test.double"),)),)
     )
 
-    assert registry.list_calculations() == [{"id": "test.double"}]
-    assert registry.run("test.double", {"value": 3}) == {"value": 6}
+    descriptor = registry.list_calculations()[0]
+    assert descriptor["id"] == "test.double"
+    assert descriptor["plugin"] == {
+        "id": "test.plugin",
+        "name": "Test",
+        "version": "1",
+    }
+    assert descriptor["runtime"]["name"] == "OpenCalcs"
+    assert descriptor["runtime"]["revision"] == "runtime-test-revision"
+    assert descriptor["runtime"]["license"] == "AGPL-3.0-only"
+    assert descriptor["runtime"]["source"] == "https://github.com/Elandu/OpenCalcs"
+
+    result = registry.run("test.double", {"value": 3})
+    assert result["value"] == 6
+    assert result["_provenance"]["runtime"]["revision"] == "runtime-test-revision"
+    assert result["_provenance"]["engine"]["id"] == "test.plugin"
+    assert result["_provenance"]["calculation"] == {
+        "id": "test.double",
+        "version": "1",
+    }
 
 
 def test_registry_rejects_duplicate_ids() -> None:
